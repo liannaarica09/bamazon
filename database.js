@@ -38,46 +38,50 @@ function getData() {
                 return connection.end();
             } else {
                 inquirer.prompt([{
-                        type: "rawlist",
-                        name: "choseItem",
-                        message: "What would you like to purchase?",
-                        choices: productArr
-                    },
-                    {
-                        type: "input",
-                        name: "quantitySelect",
-                        message: "How many would you like to buy?"
-                    }
-                ]).then(res => {
-                    var productSelection = res.choseItem;
-                    console.log(productSelection);
-                    var quantitySelection = res.quantitySelect;
-                    console.log(quantitySelection);
-
-                    // var querySelectedProduct = "select price, stock_quantity from products where product_name = " + productSelection;
-                    connection.query("select price, stock_quantity from products where product_name = 'Black Opal Necklace'", function (error, product) {
-                        if (error) throw error;
-
-                        var currentQuantity = product[0].stock_quantity;
-                        var currentPrice = product[0].price;
-
-                        if (quantitySelection <= currentQuantity) {
-
-                            var newProductQuantity = currentQuantity - quantitySelection;
-
-                            var updateProductsQuery = "update products set quantity = " + newProductQuantity + " where product_id = " + productSelection;
-
-                            connection.query(updateProductsQuery, function (error, results) {
-                                if (error) throw error;
-                                console.log("Thanks for your business. Your total cost is $" + (currentPrice * quantitySelection) + "\n");
-                                getData();
-                            });
-                        } else {
-                            console.log("Insufficient quantity! Try again.");
-                            getData();
+                            type: "input",
+                            message: "Please enter the ID of the item you'd like to purchase.",
+                            name: "item_id"
+                        },
+                        {
+                            type: "input",
+                            message: "How many would you like to purchase? (To quit enter X.)",
+                            name: "quantity"
                         }
+                    ])
+                    .then(function (inquirerResponse) {
+
+                        if (inquirerResponse.item_id === "X" || inquirerResponse.quantity === "X") {
+                            console.log("Have a nice day!");
+                            return connection.end();
+                        }
+
+                        var productSelection = inquirerResponse.item_id;
+                        var quantitySelection = inquirerResponse.quantity;
+
+                        var querySelectedProduct = "select price, stock_quantity from products where item_id = " + productSelection;
+                        connection.query(querySelectedProduct, function (error, product) {
+                            if (error) throw error;
+
+                            var currentQuantity = product[0].stock_quantity;
+                            var currentPrice = product[0].price;
+
+                            if (quantitySelection <= currentQuantity) {
+
+                                var newProductQuantity = currentQuantity - quantitySelection;
+
+                                var updateProductsQuery = "update products set stock_quantity = " + newProductQuantity + " where item_id = " + productSelection;
+
+                                connection.query(updateProductsQuery, function (error, results) {
+                                    if (error) throw error;
+                                    console.log("Thanks for your business. Your total cost is $" + (currentPrice * quantitySelection) + "\n");
+                                    getData();
+                                });
+                            } else {
+                                console.log("Insufficient quantity! Try again.");
+                                getData();
+                            }
+                        });
                     });
-                });
             }
         });
     });
